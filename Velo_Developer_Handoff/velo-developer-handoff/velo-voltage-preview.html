@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Velo · Welcome, log in, and create account</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #f7f5f0;
+    --muted: rgba(247,245,240,.72);
+    --accent: #C4F52A;
+    --glass: rgba(21, 22, 24, .58);
+    --line: rgba(255,255,255,.28);
+    --photo: url("assets/velo-runner-night.jpg");
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; padding: 52px 5vw 56px;
+    color: var(--ink); background: #0a0b0c;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Helvetica Neue", sans-serif;
+  }
+  .board { max-width: 1260px; margin: auto; }
+  .intro { margin-bottom: 38px; }
+  .intro h1 { margin: 0 0 10px; font-size: clamp(32px,4vw,52px); letter-spacing: -.045em; font-weight: 650; }
+  .intro p { margin: 0; color: var(--muted); font-size: 16px; }
+  .screens { display: grid; grid-template-columns: repeat(3,minmax(280px,350px)); justify-content: center; gap: clamp(24px,4vw,56px); }
+  .screen-wrap { min-width: 0; }
+  .screen-label { margin: 0 0 13px 5px; color: #b9b8b5; font-size: 13px; letter-spacing: .04em; }
+  .phone {
+    position: relative; width: 100%; aspect-ratio: 393 / 852; overflow: hidden;
+    border: 1px solid rgba(255,255,255,.27); border-radius: 48px; background: #111;
+    box-shadow: 0 28px 90px rgba(0,0,0,.6), inset 0 0 0 5px #050607;
+    isolation: isolate;
+  }
+  .photo { position:absolute; inset:0; z-index:-3; background-image: var(--photo); background-size: cover; background-position: 48% center; transform: scale(1.015); }
+  .photo::after { content:""; position:absolute; inset:0; background: linear-gradient(180deg,rgba(5,9,13,.22) 0%,rgba(7,10,13,.03) 27%,rgba(7,9,10,.2) 48%,rgba(7,8,9,.92) 100%), linear-gradient(100deg,rgba(4,8,12,.38),transparent 75%); }
+  .dynamic-island { position:absolute; top:14px; left:50%; transform:translateX(-50%); width:31%; height:25px; border-radius:20px; background:#050505; z-index:4; }
+  .status { position:absolute; top:17px; left:27px; right:27px; display:flex; justify-content:space-between; z-index:3; font-size:11px; font-weight:650; text-shadow:0 1px 4px #111; }
+  .status .right { letter-spacing:1px; }
+  .wordmark { position:absolute; top:61px; left:0; right:0; display:flex; justify-content:center; align-items:center; gap:8px; z-index:2; font-size:16px; letter-spacing:-.035em; font-weight:600; }
+  .mark { display:block; width:25px; height:25px; border-radius:9px; background: radial-gradient(circle at 70% 24%,#F5FFD0 0 5%,transparent 7%), radial-gradient(circle at 24% 68%,#C4F52A 0 8%,transparent 9%),linear-gradient(145deg,#0B1008 5%,#263817 40%,#C4F52A 72%,#EDFF9A 100%); box-shadow:0 0 18px rgba(196,245,42,.45); }
+  .welcome-copy { position:absolute; left:24px; right:24px; bottom:150px; }
+  .welcome-copy h2 { margin:0; max-width:330px; font-size:clamp(30px,9.3vw,38px); line-height:1.04; letter-spacing:-.045em; font-weight:680; }
+  .welcome-copy p { max-width:300px; margin:13px 0 0; color:rgba(255,255,255,.9); font-size:16px; line-height:1.4; letter-spacing:-.01em; }
+  .welcome-actions { position:absolute; left:20px; right:20px; bottom:max(40px,calc(env(safe-area-inset-bottom, 34px) + 6px)); display:grid; grid-template-columns:1fr 1.13fr; gap:10px; }
+  .btn { min-height:50px; border-radius:28px; display:flex; align-items:center; justify-content:center; font-size:16px; font-weight:620; letter-spacing:-.01em; padding:0 12px; text-align:center; }
+  .btn-ghost { color:white; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.46); backdrop-filter:blur(18px); }
+  .btn-primary { color:#172000; background:var(--accent); box-shadow:0 8px 30px rgba(196,245,42,.3); }
+  .btn-disabled { color:rgba(255,255,255,.5); background:rgba(65,71,39,.52); border:1px solid rgba(196,245,42,.12); box-shadow:none; }
+  .home-indicator { position:absolute; width:105px; height:4px; border-radius:5px; bottom:9px; left:50%; transform:translateX(-50%); background:white; z-index:5; }
+  .login-photo { background-position: 53% center; filter: saturate(.9); }
+  .login-photo::after { background:linear-gradient(180deg,rgba(5,8,12,.34),rgba(5,8,12,.16) 36%,rgba(8,9,10,.7) 100%),linear-gradient(130deg,rgba(6,10,14,.4),transparent 72%); }
+  .login-brand { top:58px; }
+  .login-card { position:absolute; left:16px; right:16px; top:50%; transform:translateY(-43%); max-height:calc(100% - 180px); overflow-y:auto; overscroll-behavior:contain; padding:24px 20px 20px; border:1px solid rgba(255,255,255,.42); border-radius:30px; background:linear-gradient(145deg,rgba(243,239,232,.2),rgba(119,136,145,.14) 50%,rgba(14,18,21,.58)); backdrop-filter:blur(26px) saturate(125%); box-shadow:0 18px 48px rgba(0,0,0,.23), inset 0 1px 0 rgba(255,255,255,.22); }
+  .login-card h2 { margin:0; font-size:30px; line-height:1.1; letter-spacing:-.04em; font-weight:650; }
+  .login-card .sub { margin:8px 0 18px; font-size:15px; line-height:1.45; color:rgba(255,255,255,.88); }
+  .field { min-height:52px; margin:10px 0; padding:0 15px; display:flex; align-items:center; gap:11px; border-radius:26px; background:rgba(14,17,19,.58); border:1px solid rgba(255,255,255,.3); color:rgba(255,255,255,.78); font-size:16px; }
+  .field-icon { width:20px; height:20px; flex:none; border-radius:50%; display:grid; place-items:center; color:white; border:1px solid rgba(255,255,255,.58); font-size:11px; }
+  .forgot { min-height:44px; display:flex; align-items:center; justify-content:flex-end; text-align:right; margin:4px 2px 10px; color:rgba(255,255,255,.92); font-size:14px; }
+  .login-card .btn { width:100%; min-height:50px; margin-top:10px; font-size:16px; }
+  .apple { color:#fff; background:rgba(255,255,255,.11); border:1px solid rgba(255,255,255,.38); backdrop-filter:blur(14px); }
+  .google { color:#17191b; background:#f8f8f7; border:1px solid rgba(255,255,255,.8); }
+  .google-g { font-weight:750; font-size:16px; margin-right:9px; background:conic-gradient(from -45deg,#4285f4 0 25%,#34a853 25% 47%,#fbbc05 47% 70%,#ea4335 70% 88%,#4285f4 88%); color:transparent; background-clip:text; -webkit-background-clip:text; }
+  .divider { display:flex; align-items:center; gap:12px; margin:15px 0 3px; color:rgba(255,255,255,.84); font-size:14px; min-height:24px; }
+  .divider::before,.divider::after { content:""; height:1px; flex:1; background:rgba(255,255,255,.32); }
+  .create { position:absolute; bottom:max(34px,calc(env(safe-area-inset-bottom, 34px) + 2px)); left:12px; right:12px; min-height:44px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:14px; color:rgba(255,255,255,.92); }
+  .create strong { color:white; font-weight:650; }
+  .signup-card { top:49%; transform:translateY(-43%); padding-bottom:19px; }
+  .signup-card .sub { margin-bottom:14px; }
+  .signup-card .field { margin:9px 0; }
+  .signup-card .btn { min-height:48px; margin-top:8px; }
+  .signup-card .divider { margin:10px 0 2px; }
+  .terms { margin:10px 4px 0; color:rgba(255,255,255,.82); font-size:12px; line-height:1.45; text-align:center; }
+  .terms a { color:inherit; text-decoration:underline; text-underline-offset:2px; padding:6px 3px; }
+  .source { max-width:810px; margin:26px auto 0; color:rgba(255,255,255,.45); font-size:12px; text-align:center; line-height:1.5; }
+  .source a { color:inherit; }
+  .palette-section { margin:64px auto 0; }
+  .palette-section h2 { margin:0; font-size:clamp(24px,3vw,34px); letter-spacing:-.04em; font-weight:640; }
+  .palette-section > p { margin:8px 0 23px; color:var(--muted); font-size:15px; }
+  .palettes { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:14px; }
+  .palette { padding:12px; border-radius:21px; border:1px solid rgba(255,255,255,.13); background:#141516; }
+  .palette-art { height:138px; border-radius:15px; position:relative; overflow:hidden; display:flex; align-items:center; justify-content:center; background:var(--bg); }
+  .capsule { width:66px; height:96px; border-radius:34px; background:var(--capsule); box-shadow:0 0 32px var(--glow), inset 0 0 10px rgba(255,255,255,.35); display:grid; place-items:center; color:rgba(255,255,255,.92); font-size:11px; letter-spacing:-.04em; font-weight:550; }
+  .palette h3 { margin:13px 2px 5px; font-size:15px; font-weight:630; letter-spacing:-.02em; }
+  .palette .mood { margin:0 2px 12px; min-height:32px; color:rgba(255,255,255,.58); font-size:11px; line-height:1.4; }
+  .swatches { display:flex; gap:5px; margin:0 2px 11px; }
+  .swatch { height:19px; flex:1; border-radius:6px; background:var(--swatch); }
+  .palette .btn { min-height:35px; font-size:11px; border-radius:20px; background:var(--cta); color:var(--cta-ink,#fff); }
+  .palette .hex { display:block; margin:8px 2px 0; color:rgba(255,255,255,.47); font-size:9px; letter-spacing:.02em; }
+  .research-note { max-width:920px; margin:26px auto 0; padding:18px 20px; border:1px solid rgba(255,255,255,.12); border-radius:18px; background:rgba(255,255,255,.035); color:rgba(255,255,255,.7); font-size:13px; line-height:1.55; }
+  .research-note strong { color:rgba(255,255,255,.94); }
+  .research-note a { color:#b7d9ef; }
+  .palette-section { display:none; }
+  @media (max-width:980px) { .palettes{grid-template-columns:repeat(3,minmax(0,1fr));} }
+  @media (max-width:600px) { .palettes{grid-template-columns:repeat(2,minmax(0,1fr));} }
+  @media (max-width:1100px) { .screens{grid-template-columns:repeat(2,minmax(280px,390px));} }
+  @media (max-width:760px) { body{padding:32px 18px;} .screens{grid-template-columns:minmax(270px,390px);gap:32px;} .intro{margin-bottom:26px;} }
+  @media (max-height:780px) { .login-card,.signup-card { top:48%; max-height:calc(100% - 150px); padding-top:18px; padding-bottom:16px; } .login-card .sub { margin-bottom:12px; } .signup-card .divider { margin-top:7px; } .signup-card .field { min-height:48px; } .welcome-copy { bottom:142px; } }
+</style>
+</head>
+<body>
+<main class="board">
+  <header class="intro">
+    <h1>Velo · Welcome, log in, sign up</h1>
+    <p>Five account-entry screens, redesigned with Voltage’s deep graphite, forest undertones, and vivid lime accent.</p>
+  </header>
+  <section class="screens" aria-label="Velo welcome, login, and sign-up flow">
+    <article class="screen-wrap">
+      <p class="screen-label">WELCOME</p>
+      <div class="phone">
+        <div class="photo"></div><div class="dynamic-island"></div>
+        <div class="status"><span>9:41</span><span class="right">●  Wi-Fi  ▰</span></div>
+        <div class="wordmark"><span class="mark"></span><span>velo</span></div>
+        <div class="welcome-copy">
+          <h2>Know your stride.<br>Build stronger miles.</h2>
+          <p>Understand how you move. Get a gait analysis and strength work shaped around you.</p>
+        </div>
+        <div class="welcome-actions"><div class="btn btn-primary">Sign up</div><div class="btn btn-ghost">Log in</div></div>
+        <div class="home-indicator"></div>
+      </div>
+    </article>
+    <article class="screen-wrap">
+    <p class="screen-label">LOG IN</p>
+      <div class="phone">
+        <div class="photo login-photo"></div><div class="dynamic-island"></div>
+        <div class="status"><span>9:41</span><span class="right">●  Wi-Fi  ▰</span></div>
+        <div class="wordmark login-brand"><span class="mark"></span><span>velo</span></div>
+        <section class="login-card">
+          <h2>Welcome back</h2>
+          <p class="sub">Your running history is here when you need it.</p>
+          <div class="field"><span class="field-icon">@</span><span>Email address</span></div>
+          <div class="field"><span class="field-icon">⌑</span><span>Password</span></div>
+          <div class="forgot">Forgot password?</div>
+          <div class="btn btn-primary">Log in</div>
+          <div class="divider">or</div>
+          <div class="btn apple">Continue with Apple</div>
+          <div class="btn google"><span class="google-g">G</span>Continue with Google</div>
+        </section>
+        <div class="create">New to Velo? <strong>Create account</strong></div>
+        <div class="home-indicator"></div>
+      </div>
+    </article>
+    <article class="screen-wrap">
+      <p class="screen-label">SIGN UP · EMAIL</p>
+      <div class="phone">
+        <div class="photo login-photo"></div><div class="dynamic-island"></div>
+        <div class="status"><span>9:41</span><span class="right">●  Wi-Fi  ▰</span></div>
+        <div class="wordmark login-brand"><span class="mark"></span><span>velo</span></div>
+        <section class="login-card signup-card">
+          <h2>Sign up</h2>
+          <p class="sub">Create your Velo account with an email address.</p>
+          <div class="divider">With an email address</div>
+          <div class="field"><span>Email address</span></div>
+          <div class="btn btn-disabled">Continue</div>
+          <p class="terms">By continuing, you agree to Velo’s <a href="#privacy">Privacy Policy</a> and <a href="#terms">Terms and Conditions</a>.</p>
+          <div class="divider">or</div>
+          <div class="btn apple">Continue with Apple</div>
+          <div class="btn google"><span class="google-g">G</span>Continue with Google</div>
+        </section>
+        <div class="create">Already have an account? <strong>Log in</strong></div>
+        <div class="home-indicator"></div>
+      </div>
+    </article>
+    <article class="screen-wrap">
+      <p class="screen-label">SIGN UP · EMAIL ENTERED</p>
+      <div class="phone">
+        <div class="photo login-photo"></div><div class="dynamic-island"></div>
+        <div class="status"><span>9:41</span><span class="right">●  Wi-Fi  ▰</span></div>
+        <div class="wordmark login-brand"><span class="mark"></span><span>velo</span></div>
+        <section class="login-card signup-card">
+          <h2>Sign up</h2>
+          <p class="sub">Create your Velo account with an email address.</p>
+          <div class="divider">With an email address</div>
+          <div class="field"><span>runner@example.com</span></div>
+          <div class="btn btn-primary">Continue</div>
+          <p class="terms">By continuing, you agree to Velo’s <a href="#privacy">Privacy Policy</a> and <a href="#terms">Terms and Conditions</a>.</p>
+          <div class="divider">or</div>
+          <div class="btn apple">Continue with Apple</div>
+          <div class="btn google"><span class="google-g">G</span>Continue with Google</div>
+        </section>
+        <div class="create">Already have an account? <strong>Log in</strong></div>
+        <div class="home-indicator"></div>
+      </div>
+    </article>
+    <article class="screen-wrap">
+      <p class="screen-label">SIGN UP · PASSWORD</p>
+      <div class="phone">
+        <div class="photo login-photo"></div><div class="dynamic-island"></div>
+        <div class="status"><span>9:41</span><span class="right">●  Wi-Fi  ▰</span></div>
+        <div class="wordmark login-brand"><span class="mark"></span><span>velo</span></div>
+        <section class="login-card signup-card">
+          <h2>Finish signing up</h2>
+          <p class="sub">Add your details to secure your account.</p>
+          <div class="field"><span>First name</span><span style="margin-left:auto;color:#fff">Runner</span></div>
+          <div class="field"><span>Create password</span></div>
+          <div class="field"><span>Repeat password</span></div>
+          <div class="btn btn-primary">Create account</div>
+        </section>
+        <div class="create">Already have an account? <strong>Log in</strong></div>
+        <div class="home-indicator"></div>
+      </div>
+    </article>
+  </section>
+  <section class="palette-section" aria-label="Five Velo color directions">
+    <h2>Five color directions</h2>
+    <p>Each keeps the cinematic photo and glass treatment. Only the Velo color identity changes.</p>
+    <div class="palettes">
+      <article class="palette" style="--bg:#101d27;--capsule:linear-gradient(155deg,#0c1822 4%,#315b70 38%,#83c6d7 69%,#e2f3ee 100%);--glow:rgba(94,190,216,.55);--cta:#69bfd3;--swatch:#101d27;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Glacier</h3><p class="mood">Clear, athletic, quietly technical.</p><div class="swatches"><i class="swatch" style="--swatch:#101d27"></i><i class="swatch" style="--swatch:#315b70"></i><i class="swatch" style="--swatch:#69bfd3"></i><i class="swatch" style="--swatch:#e2f3ee"></i></div><div class="btn">Get started</div><span class="hex">#101D27 · #315B70 · #69BFD3 · #E2F3EE</span>
+      </article>
+      <article class="palette" style="--bg:#241922;--capsule:linear-gradient(155deg,#17121b 5%,#60404f 40%,#d49dad 70%,#f5e3df 100%);--glow:rgba(220,151,174,.5);--cta:#d49dad;--swatch:#241922;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Rose dusk</h3><p class="mood">Warm, human, soft without feeling sweet.</p><div class="swatches"><i class="swatch" style="--swatch:#241922"></i><i class="swatch" style="--swatch:#60404f"></i><i class="swatch" style="--swatch:#d49dad"></i><i class="swatch" style="--swatch:#f5e3df"></i></div><div class="btn">Get started</div><span class="hex">#241922 · #60404F · #D49DAD · #F5E3DF</span>
+      </article>
+      <article class="palette" style="--bg:#1d1930;--capsule:linear-gradient(155deg,#151426 5%,#40376c 39%,#9c8be0 70%,#e9e4ff 100%);--glow:rgba(158,138,242,.55);--cta:#a494ed;--swatch:#1d1930;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Violet pulse</h3><p class="mood">Expressive, focused, distinctly digital.</p><div class="swatches"><i class="swatch" style="--swatch:#1d1930"></i><i class="swatch" style="--swatch:#40376c"></i><i class="swatch" style="--swatch:#a494ed"></i><i class="swatch" style="--swatch:#e9e4ff"></i></div><div class="btn">Get started</div><span class="hex">#1D1930 · #40376C · #A494ED · #E9E4FF</span>
+      </article>
+      <article class="palette" style="--bg:#17221d;--capsule:linear-gradient(155deg,#111b17 5%,#385545 39%,#93b89a 69%,#e4edda 100%);--glow:rgba(144,190,150,.46);--cta:#8fb994;--swatch:#17221d;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Alpine sage</h3><p class="mood">Grounded, restorative, connected to movement.</p><div class="swatches"><i class="swatch" style="--swatch:#17221d"></i><i class="swatch" style="--swatch:#385545"></i><i class="swatch" style="--swatch:#8fb994"></i><i class="swatch" style="--swatch:#e4edda"></i></div><div class="btn">Get started</div><span class="hex">#17221D · #385545 · #8FB994 · #E4EDDA</span>
+      </article>
+      <article class="palette" style="--bg:#1a202a;--capsule:linear-gradient(155deg,#111820 5%,#45556b 39%,#b2c2d7 70%,#f4f1e9 100%);--glow:rgba(196,211,232,.5);--cta:#c4d3e5;--cta-ink:#18202b;--swatch:#1a202a;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Quiet silver</h3><p class="mood">Minimal, timeless, closest to Apple’s restraint.</p><div class="swatches"><i class="swatch" style="--swatch:#1a202a"></i><i class="swatch" style="--swatch:#45556b"></i><i class="swatch" style="--swatch:#c4d3e5"></i><i class="swatch" style="--swatch:#f4f1e9"></i></div><div class="btn">Get started</div><span class="hex">#1A202A · #45556B · #C4D3E5 · #F4F1E9</span>
+      </article>
+    </div>
+  </section>
+  <section class="palette-section" aria-label="Five darker Velo color directions">
+    <h2>Darker, higher energy options</h2>
+    <p>Five deeper foundations with a brighter signature accent, designed to feel athletic and gender neutral.</p>
+    <div class="palettes">
+      <article class="palette" style="--bg:#071A20;--capsule:linear-gradient(155deg,#071217 4%,#123B43 39%,#35A99F 67%,#B9F4E7 100%);--glow:rgba(66,220,200,.58);--cta:#62E2D0;--cta-ink:#08211F;--swatch:#071A20;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Tidal signal</h3><p class="mood">Deep ink with a bright mineral teal.</p><div class="swatches"><i class="swatch" style="--swatch:#071A20"></i><i class="swatch" style="--swatch:#123B43"></i><i class="swatch" style="--swatch:#62E2D0"></i><i class="swatch" style="--swatch:#B9F4E7"></i></div><div class="btn">Get started</div><span class="hex">#071A20 · #123B43 · #62E2D0 · #B9F4E7</span>
+      </article>
+      <article class="palette" style="--bg:#0C1223;--capsule:linear-gradient(155deg,#090E1A 5%,#1E3262 39%,#527CFF 69%,#D5E1FF 100%);--glow:rgba(89,132,255,.56);--cta:#7BA6FF;--cta-ink:#0B1732;--swatch:#0C1223;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Blue hour</h3><p class="mood">Confident cobalt, with a crisp data feel.</p><div class="swatches"><i class="swatch" style="--swatch:#0C1223"></i><i class="swatch" style="--swatch:#1E3262"></i><i class="swatch" style="--swatch:#7BA6FF"></i><i class="swatch" style="--swatch:#D5E1FF"></i></div><div class="btn">Get started</div><span class="hex">#0C1223 · #1E3262 · #7BA6FF · #D5E1FF</span>
+      </article>
+      <article class="palette" style="--bg:#171323;--capsule:linear-gradient(155deg,#100D19 5%,#3B2C66 38%,#8668E8 68%,#DED5FF 100%);--glow:rgba(158,126,255,.57);--cta:#B7A2FF;--cta-ink:#201738;--swatch:#171323;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Ultraviolet</h3><p class="mood">Unexpected, vivid, and digitally premium.</p><div class="swatches"><i class="swatch" style="--swatch:#171323"></i><i class="swatch" style="--swatch:#3B2C66"></i><i class="swatch" style="--swatch:#B7A2FF"></i><i class="swatch" style="--swatch:#DED5FF"></i></div><div class="btn">Get started</div><span class="hex">#171323 · #3B2C66 · #B7A2FF · #DED5FF</span>
+      </article>
+      <article class="palette" style="--bg:#111611;--capsule:linear-gradient(155deg,#0C110D 5%,#2D432C 39%,#829D42 67%,#E1F5A6 100%);--glow:rgba(194,239,92,.52);--cta:#C7F36C;--cta-ink:#1A2412;--swatch:#111611;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Cadence</h3><p class="mood">A rare chartreuse accent that reads fast and bold.</p><div class="swatches"><i class="swatch" style="--swatch:#111611"></i><i class="swatch" style="--swatch:#2D432C"></i><i class="swatch" style="--swatch:#C7F36C"></i><i class="swatch" style="--swatch:#E1F5A6"></i></div><div class="btn">Get started</div><span class="hex">#111611 · #2D432C · #C7F36C · #E1F5A6</span>
+      </article>
+      <article class="palette" style="--bg:#111820;--capsule:linear-gradient(155deg,#0B1118 5%,#364958 39%,#8BA6B7 68%,#E4EFF3 100%);--glow:rgba(192,221,235,.55);--cta:#D3E6EF;--cta-ink:#17232B;--swatch:#111820;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Cold alloy</h3><p class="mood">Understated steel and ice with a clean glow.</p><div class="swatches"><i class="swatch" style="--swatch:#111820"></i><i class="swatch" style="--swatch:#364958"></i><i class="swatch" style="--swatch:#9BBACB"></i><i class="swatch" style="--swatch:#E4EFF3"></i></div><div class="btn">Get started</div><span class="hex">#111820 · #364958 · #9BBACB · #E4EFF3</span>
+      </article>
+    </div>
+    <aside class="research-note"><strong>What the research suggests:</strong> there isn’t one proven “best fitness app color.” For Velo, a dark foundation can give running photos and live metrics room to stand out, while one vivid accent can make key actions easy to find. Apple recommends adapting to the phone’s light/dark appearance, keeping strong contrast, and reserving accent color for emphasis; WCAG sets 4.5:1 contrast for normal text and 3:1 for large text. Studies find color preferences can vary across people and cultures, so the gender-neutral direction here comes from avoiding pink/blue shorthand and choosing a distinctive, sport-led accent. <a href="https://developer.apple.com/design/human-interface-guidelines/dark-mode">Apple Dark Mode</a> · <a href="https://developer.apple.com/design/human-interface-guidelines/color">Apple Color</a> · <a href="https://www.w3.org/WAI/WCAG22/Understanding/contrast-minimum.html">W3C contrast</a> · <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC8451877/">Color preference study</a>.</aside>
+  </section>
+  <section class="palette-section" aria-label="Five softer atmospheric Velo color directions">
+    <h2>More atmospheric directions</h2>
+    <p>Muted, layered colors for a quieter premium feel, with enough contrast to keep Velo recognizable.</p>
+    <div class="palettes">
+      <article class="palette" style="--bg:#111722;--capsule:linear-gradient(155deg,#0D1118 5%,#26354C 39%,#8292B0 68%,#DCE3EC 100%);--glow:rgba(147,165,202,.38);--cta:#AAB8D4;--cta-ink:#182131;--swatch:#111722;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Blue slate</h3><p class="mood">Quietly confident, cool, and precise.</p><div class="swatches"><i class="swatch" style="--swatch:#111722"></i><i class="swatch" style="--swatch:#26354C"></i><i class="swatch" style="--swatch:#AAB8D4"></i><i class="swatch" style="--swatch:#DCE3EC"></i></div><div class="btn">Get started</div><span class="hex">#111722 · #26354C · #AAB8D4 · #DCE3EC</span>
+      </article>
+      <article class="palette" style="--bg:#151B18;--capsule:linear-gradient(155deg,#101512 5%,#293D35 39%,#77968A 68%,#DDE8DF 100%);--glow:rgba(151,190,170,.38);--cta:#A9C5B5;--cta-ink:#17251D;--swatch:#151B18;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Deep jade</h3><p class="mood">Natural, steady, and quietly restorative.</p><div class="swatches"><i class="swatch" style="--swatch:#151B18"></i><i class="swatch" style="--swatch:#293D35"></i><i class="swatch" style="--swatch:#A9C5B5"></i><i class="swatch" style="--swatch:#DDE8DF"></i></div><div class="btn">Get started</div><span class="hex">#151B18 · #293D35 · #A9C5B5 · #DDE8DF</span>
+      </article>
+      <article class="palette" style="--bg:#1A1720;--capsule:linear-gradient(155deg,#110F16 5%,#403747 39%,#9A8C9E 68%,#E4DCE5 100%);--glow:rgba(190,168,191,.38);--cta:#C7B8C8;--cta-ink:#27202B;--swatch:#1A1720;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Smoked lilac</h3><p class="mood">Distinctive and expressive with a soft edge.</p><div class="swatches"><i class="swatch" style="--swatch:#1A1720"></i><i class="swatch" style="--swatch:#403747"></i><i class="swatch" style="--swatch:#C7B8C8"></i><i class="swatch" style="--swatch:#E4DCE5"></i></div><div class="btn">Get started</div><span class="hex">#1A1720 · #403747 · #C7B8C8 · #E4DCE5</span>
+      </article>
+      <article class="palette" style="--bg:#161918;--capsule:linear-gradient(155deg,#111412 5%,#37433F 39%,#8BA59A 68%,#E2E8DD 100%);--glow:rgba(175,198,184,.34);--cta:#D5DFD4;--cta-ink:#25312B;--swatch:#161918;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Stone & sea</h3><p class="mood">Balanced grey-green with a soft mineral light.</p><div class="swatches"><i class="swatch" style="--swatch:#161918"></i><i class="swatch" style="--swatch:#37433F"></i><i class="swatch" style="--swatch:#A4B8AD"></i><i class="swatch" style="--swatch:#E2E8DD"></i></div><div class="btn">Get started</div><span class="hex">#161918 · #37433F · #A4B8AD · #E2E8DD</span>
+      </article>
+      <article class="palette" style="--bg:#1D1B1A;--capsule:linear-gradient(155deg,#141312 5%,#413A35 39%,#A49A8D 68%,#E8E0D4 100%);--glow:rgba(206,190,170,.34);--cta:#D4C9B9;--cta-ink:#302920;--swatch:#1D1B1A;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Warm graphite</h3><p class="mood">Cinematic, grounded, and close to the original glass concept.</p><div class="swatches"><i class="swatch" style="--swatch:#1D1B1A"></i><i class="swatch" style="--swatch:#413A35"></i><i class="swatch" style="--swatch:#D4C9B9"></i><i class="swatch" style="--swatch:#E8E0D4"></i></div><div class="btn">Get started</div><span class="hex">#1D1B1A · #413A35 · #D4C9B9 · #E8E0D4</span>
+      </article>
+    </div>
+  </section>
+  <section class="palette-section" aria-label="Five bright Velo color directions">
+    <h2>Brighter statement colors</h2>
+    <p>High energy accents with real presence on a dark screen, in five gender neutral directions.</p>
+    <div class="palettes">
+      <article class="palette" style="--bg:#07131B;--capsule:linear-gradient(155deg,#071018 4%,#10445C 37%,#00BFD9 66%,#B4F9FF 100%);--glow:rgba(0,221,243,.7);--cta:#27DDF2;--cta-ink:#07171C;--swatch:#07131B;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Ion</h3><p class="mood">Electric cyan with a cool, technical glow.</p><div class="swatches"><i class="swatch" style="--swatch:#07131B"></i><i class="swatch" style="--swatch:#10445C"></i><i class="swatch" style="--swatch:#27DDF2"></i><i class="swatch" style="--swatch:#B4F9FF"></i></div><div class="btn">Get started</div><span class="hex">#07131B · #10445C · #27DDF2 · #B4F9FF</span>
+      </article>
+      <article class="palette" style="--bg:#091126;--capsule:linear-gradient(155deg,#080E1C 5%,#1D3479 37%,#386BFF 66%,#C7D9FF 100%);--glow:rgba(56,107,255,.7);--cta:#477BFF;--cta-ink:#091126;--swatch:#091126;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Velocity blue</h3><p class="mood">A vivid cobalt that feels fast and unmistakable.</p><div class="swatches"><i class="swatch" style="--swatch:#091126"></i><i class="swatch" style="--swatch:#1D3479"></i><i class="swatch" style="--swatch:#477BFF"></i><i class="swatch" style="--swatch:#C7D9FF"></i></div><div class="btn">Get started</div><span class="hex">#091126 · #1D3479 · #477BFF · #C7D9FF</span>
+      </article>
+      <article class="palette" style="--bg:#10140A;--capsule:linear-gradient(155deg,#0B1008 5%,#354719 38%,#A3D900 67%,#EDFF9A 100%);--glow:rgba(196,255,0,.65);--cta:#C4F52A;--cta-ink:#172000;--swatch:#10140A;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Voltage</h3><p class="mood">Acid lime for the boldest, most visible identity.</p><div class="swatches"><i class="swatch" style="--swatch:#10140A"></i><i class="swatch" style="--swatch:#354719"></i><i class="swatch" style="--swatch:#C4F52A"></i><i class="swatch" style="--swatch:#EDFF9A"></i></div><div class="btn">Get started</div><span class="hex">#10140A · #354719 · #C4F52A · #EDFF9A</span>
+      </article>
+      <article class="palette" style="--bg:#120D20;--capsule:linear-gradient(155deg,#0D0B18 5%,#35216D 37%,#8855FF 66%,#DDD0FF 100%);--glow:rgba(146,94,255,.72);--cta:#A47AFF;--cta-ink:#170C2B;--swatch:#120D20;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Ultraviolet</h3><p class="mood">Saturated violet with a polished, modern edge.</p><div class="swatches"><i class="swatch" style="--swatch:#120D20"></i><i class="swatch" style="--swatch:#35216D"></i><i class="swatch" style="--swatch:#A47AFF"></i><i class="swatch" style="--swatch:#DDD0FF"></i></div><div class="btn">Get started</div><span class="hex">#120D20 · #35216D · #A47AFF · #DDD0FF</span>
+      </article>
+      <article class="palette" style="--bg:#07170F;--capsule:linear-gradient(155deg,#07120C 5%,#145334 38%,#00CC78 66%,#B9FFDA 100%);--glow:rgba(0,230,125,.7);--cta:#16E58B;--cta-ink:#072014;--swatch:#07170F;">
+        <div class="palette-art"><div class="capsule">velo</div></div><h3>Green flash</h3><p class="mood">Bright emerald energy with a clean, natural base.</p><div class="swatches"><i class="swatch" style="--swatch:#07170F"></i><i class="swatch" style="--swatch:#145334"></i><i class="swatch" style="--swatch:#16E58B"></i><i class="swatch" style="--swatch:#B9FFDA"></i></div><div class="btn">Get started</div><span class="hex">#07170F · #145334 · #16E58B · #B9FFDA</span>
+      </article>
+    </div>
+  </section>
+  <p class="source">Voltage palette: #10140A · #354719 · #C4F52A · #EDFF9A. Photo: <a href="https://unsplash.com/s/photos/running-night">Unsplash running-at-night collection</a> (asset included in the handoff package).</p>
+</main>
+</body>
+</html>

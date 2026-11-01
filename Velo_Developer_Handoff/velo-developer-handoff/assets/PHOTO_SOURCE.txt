@@ -1,0 +1,7 @@
+Photo: running-at-night image previously selected for the Velo preview
+Source collection: https://unsplash.com/s/photos/running-night
+Direct image asset: https://images.unsplash.com/photo-1516398810565-0cb4310bb8ea
+License: Unsplash License (included from the Unsplash running-at-night collection)
+Contributor credit: the original preview did not retain the photographer metadata.
+Downloaded on: 2026-10-11
+File: velo-runner-night.jpg
