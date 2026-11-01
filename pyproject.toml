@@ -1,0 +1,44 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name            = "velo-engine"
+version         = "0.1.0"
+description     = "Pure-Python running pose and biomechanics analysis engine"
+readme          = "README.md"
+requires-python = ">=3.11"
+license         = { text = "MIT" }
+
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "scikit-learn>=1.4",
+]
+data = [
+    "pandas>=2.0",
+    "openpyxl>=3.1",
+]
+plot = [
+    "matplotlib>=3.8",
+]
+video-analysis = [
+    "mediapipe>=1.0.1",
+    "opencv-python>=4.10",
+]
+
+[tool.pytest.ini_options]
+testpaths        = ["engine/tests", "engine/running/tests"]
+addopts          = "-v --tb=short"
+python_files     = "test_*.py"
+python_classes   = "Test*"
+python_functions = "test_*"
+
+[tool.setuptools.packages.find]
+include = ["engine*"]
