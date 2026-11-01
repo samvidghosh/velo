@@ -1,54 +1,74 @@
-import React, { useState } from 'react';
-import { ImageBackground, SafeAreaView, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Colors } from '../constants/colors';
+import React,{useRef,useState} from 'react';
+import {ImageBackground,Platform,StatusBar,StyleSheet,Text,TouchableOpacity,View} from 'react-native';
+import {SafeAreaView} from 'react-native-safe-area-context';
+import {useRouter} from 'expo-router';
+import {LinearGradient} from 'expo-linear-gradient';
+import Svg,{Circle,Path} from 'react-native-svg';
+import {BookOpen,ChevronLeft,ChevronRight,Mountain,Search,ShieldCheck,Stethoscope,Zap} from 'lucide-react-native';
+import VeloWordmark from '../components/VeloWordmark';
+import PhotoScrim from '../components/PhotoScrim';
 
-const slides = [
-  { title: 'Understand how\nyou move.', body: 'Velo turns your running video into a clear picture of your form, then helps you build strength with exercises made for you.', image: require('../assets/running/runner-gait-reference.png'), action: 'Let’s start' },
-  { title: 'How will you use Velo?', body: 'Choose the path that best describes you.', choices: ['Runner · for my own training', 'Coach · for my athletes', 'Medical professional · for movement support'] },
-  { title: 'Choose your path', body: 'What would you like to focus on?', choices: ['Improve fitness and performance', 'Learn about my running form', 'Reduce my injury risk'] },
-  { title: 'Lab-quality analysis.', body: 'Ever wondered what a full analysis of your running form can reveal?', image: require('../assets/running/velo-lab-treadmill.png') },
-  { title: 'Game time!', body: 'How much do you think a running analysis in a laboratory costs?', choices: ['₹2,500', '₹5,000', '₹15,000'], quiz: true },
-  { title: 'Anytime, anywhere.', body: 'Whether on a treadmill, track, or road, check your form with Velo.', image: require('../assets/running/velo-anytime-road.png') },
-  { title: 'Personalized analysis.', body: 'Velo personalizes your analysis by scanning your running form.\n\nTell us more about you.' },
-  { title: 'How would you identify yourself?', body: 'Choose an option if you’d like to personalize your experience.', choices: ['Man', 'Woman', 'Non-binary', 'Prefer not to say'] },
-  { title: 'How would you rate your level in running?', body: 'You can change this later.', choices: ['Beginner', 'Intermediate', 'Advanced', 'Elite'] },
+const lime='#C4F52A';
+type Choice={title:string;sub?:string;icon?:React.ComponentType<{size?:number;color?:string;strokeWidth?:number}>;level?:number};
+type Slide={title:string;body?:string;image?:number;kind?:'welcome'|'choice'|'quiz'|'story'|'center'|'identity'|'level';choices?:Choice[];optional?:boolean;button?:string};
+const slides:Slide[]=[
+ {kind:'welcome',title:'Understand how\nyou move.',body:'Velo turns your running video into a clear picture of your form, then helps you build strength with exercises made for you.',image:0,button:'Let’s start'},
+ {kind:'choice',title:'How will you use Velo?',body:'Choose the option that fits you best.',optional:true,choices:[{title:'Runner',sub:'For my own training',icon:Mountain},{title:'Coach',sub:'For the athletes I coach',icon:BookOpen},{title:'Medical professional',sub:'For clinical movement support',icon:Stethoscope}]},
+ {kind:'choice',title:'What brings you to Velo?',body:'Choose the result you care about most.',optional:true,choices:[{title:'Improve fitness and performance',sub:'Build stronger, more efficient running',icon:Zap},{title:'Learn about my running form',sub:'Understand what your movement means',icon:Search},{title:'Reduce my injury risk',sub:'Spot movement patterns and build resilience',icon:ShieldCheck}]},
+ {kind:'story',title:'Velo brings lab-quality analysis to you.',body:'Ever wondered what a full analysis of your running form can reveal?',image:1,button:'Next'},
+ {kind:'quiz',title:'Game time!',body:'How much do you think a running analysis in a laboratory costs?',optional:true,choices:[{title:'₹2,500'},{title:'₹5,000'},{title:'₹15,000'}],button:'Continue'},
+ {kind:'story',title:'Anytime,\nanywhere.',body:'Whether on a treadmill, track, or road, check your form with Velo.',image:2,button:'Next'},
+ {kind:'center',title:'Velo personalizes your analysis by scanning your running form.',body:'Tell us more about you.',button:'Let’s go'},
+ {kind:'identity',title:'How would you identify yourself?',body:'Choose one option.',choices:[{title:'Man'},{title:'Woman'},{title:'Non-binary'},{title:'Prefer not to say'}]},
+ {kind:'level',title:'How would you rate your level in running?',choices:[{title:'Beginner',sub:'You’ve just started running',level:1},{title:'Intermediate',sub:'Your pace is about 4:58–7:09 min/km',level:2},{title:'Advanced',sub:'You can run 10 km at about 4:58–6:13 min/km',level:3},{title:'Elite',sub:'You run 10 km or more at 3:56 min/km or faster',level:4}]},
 ];
-
-export default function OnboardingScreen() {
-  const router = useRouter();
-  const [step, setStep] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, string>>({});
-  const [quizRevealed, setQuizRevealed] = useState(false);
-  const slide = slides[step];
-  const advance = () => {
-    if (step === slides.length - 1) router.replace('/analysis' as never);
-    else setStep(v => v + 1);
-  };
-  const skip = () => { setAnswers(v => { const n={...v}; delete n[step]; return n; }); advance(); };
-  return <SafeAreaView style={styles.safe}><StatusBar barStyle="light-content" />
-    <View style={styles.progress}><View style={[styles.progressFill,{width:`${((step+1)/slides.length)*100}%`}]} /></View>
-    {slide.image ? <ImageBackground source={slide.image} resizeMode="cover" style={StyleSheet.absoluteFill} /> : null}
-    <View style={[StyleSheet.absoluteFill, styles.scrim]} />
-    <View style={styles.header}><Text style={styles.wordmark}>velo</Text><Text style={styles.step}>{step+1} / {slides.length}</Text></View>
-    <View style={styles.content}>
-      <Text style={styles.title}>{slide.title}</Text><Text style={styles.body}>{slide.body}</Text>
-      {slide.choices?.map(choice => {
-        const selected=answers[step]===choice;
-        const correct=slide.quiz && quizRevealed && choice==='₹15,000';
-        const incorrect=slide.quiz && quizRevealed && selected && !correct;
-        return <TouchableOpacity key={choice} accessibilityRole="radio" accessibilityState={{selected}} style={[styles.option,selected&&styles.selected,correct&&styles.correct,incorrect&&styles.incorrect]} onPress={()=>{setAnswers(v=>({...v,[step]:choice})); if(slide.quiz)setQuizRevealed(true);}}><Text style={styles.optionText}>{choice}</Text></TouchableOpacity>;
-      })}
-      {slide.quiz&&quizRevealed?<Text style={styles.quizNote}>Prices vary by provider and testing depth. ₹15,000 is the reference answer for a comprehensive biomechanical profile.</Text>:null}
+const photos=[require('../assets/running/runner-gait-reference.png'),require('../assets/running/velo-lab-treadmill.png'),require('../assets/running/velo-anytime-road.png')];
+export default function OnboardingScreen(){
+ const router=useRouter();const [step,setStep]=useState(0);const [answers,setAnswers]=useState<Record<number,string>>({});const [quizStatus,setQuizStatus]=useState<'idle'|'wrong'|'reveal'|'correct'>('idle');const quizTimer=useRef<ReturnType<typeof setTimeout>|null>(null);const slide=slides[step];const selected=answers[step];const progress=[0,48,72,78,84,89,93,96,100][step];const continueDisabled=Boolean(slide.choices&&slide.kind!=='quiz'&&!selected)||Boolean(slide.kind==='quiz'&&quizStatus!=='correct'&&quizStatus!=='reveal');
+ const advance=()=>{if(quizTimer.current)clearTimeout(quizTimer.current);if(step===slides.length-1){router.replace('/analysis' as never);return}setStep(s=>s+1);setQuizStatus('idle')};
+ const back=()=>{if(quizTimer.current)clearTimeout(quizTimer.current);if(step>0){setStep(s=>s-1);setQuizStatus('idle')}else router.back()};
+ const skip=()=>{setAnswers(a=>{const next={...a};delete next[step];return next});advance()};
+ const choose=(value:string)=>{setAnswers(a=>({...a,[step]:value}));if(slide.kind==='quiz'){if(quizTimer.current)clearTimeout(quizTimer.current);if(value==='₹15,000')setQuizStatus('correct');else{setQuizStatus('wrong');quizTimer.current=setTimeout(()=>setQuizStatus('reveal'),560)}}};
+ return <View style={styles.root}><StatusBar barStyle="light-content"/>
+  {slide.image!==undefined?<ImageBackground source={photos[slide.image]} resizeMode="cover" style={styles.fullscreenImage}/>:null}
+  {slide.image!==undefined?<PhotoScrim variant={slide.kind==='story'?'story':'welcome'}/>:<LinearGradient pointerEvents="none" colors={['#090D0A','#070B0A','#05080B']} locations={[0,.48,1]} style={StyleSheet.absoluteFill}/ >}
+  <SafeAreaView style={[styles.safe,Platform.OS==='web'&&styles.webSafe]} edges={['top','bottom']}>
+   <View style={styles.header}><VeloWordmark/></View>
+   {step>0?<View accessible accessibilityRole="progressbar" accessibilityLabel="Onboarding progress" accessibilityValue={{min:0,max:100,now:progress}} style={styles.progressTrack}><View style={[styles.progressFill,{width:`${progress}%`}]}/></View>:null}
+   <View style={[styles.content,slide.kind==='welcome'&&styles.welcomeContent,slide.kind==='story'&&styles.storyContent,slide.kind==='choice'&&styles.choiceContent,(slide.kind==='identity'||slide.kind==='level')&&styles.profileContent]}>
+    {slide.kind==='welcome'||slide.kind==='story'?<>
+      <View style={styles.photoCopy}><Text style={styles.photoTitle}>{slide.title}</Text>{slide.body?<Text style={styles.photoBody}>{slide.body}</Text>:null}</View>
+    </>:slide.kind==='center'?<View style={styles.centerCopy}><Text style={styles.centerTitle}>{slide.title}</Text><Text style={styles.centerBody}>{slide.body}</Text></View>
+    :slide.kind==='quiz'?<View style={styles.quiz}><Text style={styles.quizTitle}>{slide.title}</Text><Text style={styles.quizQuestion}>{slide.body}</Text><View style={styles.quizList}>{slide.choices?.map(c=>{const correct=(quizStatus==='reveal'||quizStatus==='correct')&&c.title==='₹15,000';const wrong=quizStatus==='wrong'&&selected===c.title;return <TouchableOpacity key={c.title} accessibilityRole="radio" accessibilityState={{selected:selected===c.title}} style={[styles.quizOption,correct&&styles.correct,wrong&&styles.wrong,selected===c.title&&!wrong&&styles.selected]} onPress={()=>choose(c.title)}><Text style={[styles.quizText,correct&&styles.correctText]}>{c.title}</Text></TouchableOpacity>})}</View>
+      <Text style={styles.quizFeedback}>{quizStatus==='correct'?'Correct. A full lab-based biomechanical profile can cost around ₹15,000.':quizStatus==='reveal'?'The correct answer is ₹15,000 for an advanced lab biomechanical profile.':'Choose an answer to see how laboratory prices can vary.'}</Text></View>
+    :slide.kind==='identity'||slide.kind==='level'?<View style={styles.profileContent}>
+      <Text style={styles.profileTitle}>{slide.title}</Text>{slide.kind==='identity'?<Text style={styles.profileSub}>{slide.body}</Text>:null}
+      <View style={[styles.profileOptions,slide.kind==='level'&&styles.levelOptions]}><ProfileOptions kind={slide.kind} choices={slide.choices||[]} selected={selected} onSelect={choose}/></View>
     </View>
-    <View style={styles.footer}>
-      {step===0?<TouchableOpacity onPress={advance} style={styles.primary}><Text style={styles.primaryText}>{slide.action}</Text></TouchableOpacity>:<>
-        <TouchableOpacity onPress={()=>{if(step>0)setStep(v=>v-1);else router.back();}} style={styles.back}><Text style={styles.backText}>Back</Text></TouchableOpacity>
-        {(step===1||step===2||step===4)?<TouchableOpacity onPress={skip} style={styles.skip}><Text style={styles.skipText}>Skip</Text></TouchableOpacity>:null}
-        <TouchableOpacity disabled={!!slide.choices&&!answers[step]&&!slide.quiz} onPress={advance} style={[styles.primary,!!slide.choices&&!answers[step]&&!slide.quiz&&styles.disabled]}><Text style={styles.primaryText}>{step===slides.length-1?'Continue':'Next'}</Text></TouchableOpacity>
-      </>}
-    </View>
-  </SafeAreaView>;
+    :<View style={[styles.panel,slide.kind==='choice'&&styles.choicePanel]}>
+      <Text style={styles.title}>{slide.title}</Text>{slide.body?<Text style={styles.body}>{slide.body}</Text>:null}
+      {slide.choices?.map(choice=>{const Icon=choice.icon;const isSelected=selected===choice.title;return <TouchableOpacity key={choice.title} accessibilityRole="radio" accessibilityState={{selected:isSelected}} style={[styles.choice,isSelected&&styles.choiceSelected]} onPress={()=>choose(choice.title)}>
+       {Icon?<View style={styles.iconFrame}><Icon size={18} color={lime} strokeWidth={1.8}/></View>:null}
+       <View style={styles.choiceCopy}><Text style={styles.choiceTitle}>{choice.title}</Text>{choice.sub?<Text style={styles.choiceSub}>{choice.sub}</Text>:null}</View>
+       <View style={[styles.radio,isSelected&&styles.radioOn]}>{isSelected?<View style={styles.radioDot}/>:null}</View>
+      </TouchableOpacity>})}
+      <View style={styles.panelSpacer}/><Text style={styles.panelFoot}>{step===1?'You can update this later in your profile.':'Velo will tailor your first assessment to your goal.'}</Text>
+    </View>}
+   </View>
+   <View style={[styles.footer,slide.kind==='choice'&&styles.choiceFooter]}>
+    {step===0?<TouchableOpacity style={[styles.primary,styles.welcomePrimary]} onPress={advance}><Text style={styles.primaryText}>{slide.button}</Text></TouchableOpacity>:<>
+     <TouchableOpacity accessibilityRole="button" style={styles.back} onPress={back}><ChevronLeft size={18} color="#F5F7FA"/><Text style={styles.backText}>Back</Text></TouchableOpacity>
+     <TouchableOpacity accessibilityRole="button" style={[styles.primary,styles.footerPrimary,continueDisabled&&slide.kind!=='quiz'&&styles.disabledPrimary,slide.kind==='quiz'&&continueDisabled&&styles.disabled]} onPress={advance} disabled={continueDisabled}><Text style={[styles.primaryText,continueDisabled&&slide.kind!=='quiz'&&styles.disabledPrimaryText]}>{slide.button||(step===slides.length-1?'Continue':'Next')}</Text></TouchableOpacity>
+    </>}
+   </View>
+   {slide.optional?<TouchableOpacity style={styles.skip} onPress={skip}><Text style={styles.skipText}>Skip</Text></TouchableOpacity>:null}
+  </SafeAreaView>
+ </View>
 }
-
-const styles=StyleSheet.create({safe:{flex:1,backgroundColor:Colors.veloCanvas},progress:{position:'absolute',top:0,left:0,right:0,height:3,zIndex:2,backgroundColor:'#4b553b'},progressFill:{height:3,backgroundColor:Colors.veloLime},scrim:{backgroundColor:'rgba(9,15,8,0.55)'},header:{paddingHorizontal:24,paddingTop:20,flexDirection:'row',justifyContent:'space-between',alignItems:'center'},wordmark:{fontSize:27,fontWeight:'700',letterSpacing:4,color:Colors.veloText},step:{color:'#d1d6c8',fontSize:13},content:{flex:1,justifyContent:'center',paddingHorizontal:24},title:{color:Colors.veloText,fontSize:32,fontWeight:'700',lineHeight:39,marginBottom:14},body:{color:'#e0e3db',fontSize:16,lineHeight:24,marginBottom:24},option:{minHeight:54,borderRadius:16,borderColor:'rgba(255,255,255,0.28)',borderWidth:1,paddingHorizontal:17,justifyContent:'center',marginBottom:10,backgroundColor:'rgba(18,29,16,0.78)'},selected:{borderColor:Colors.veloLime,backgroundColor:'rgba(196,245,42,0.15)'},correct:{borderColor:'#9de19c'},incorrect:{borderColor:'#ff6b61'},optionText:{color:Colors.veloText,fontSize:15,fontWeight:'600'},quizNote:{color:'#e7edda',fontSize:13,lineHeight:19,marginTop:8},footer:{minHeight:88,paddingHorizontal:20,paddingBottom:14,flexDirection:'row',alignItems:'center',justifyContent:'center',gap:10},primary:{height:52,minWidth:128,flex:1,maxWidth:250,borderRadius:28,backgroundColor:Colors.veloLime,alignItems:'center',justifyContent:'center'},primaryText:{color:Colors.veloCanvas,fontSize:16,fontWeight:'700'},back:{height:52,minWidth:88,paddingHorizontal:18,borderRadius:28,borderWidth:1,borderColor:'rgba(255,255,255,0.35)',alignItems:'center',justifyContent:'center'},backText:{color:Colors.veloText,fontSize:16,fontWeight:'600'},skip:{height:48,paddingHorizontal:8,justifyContent:'center'},skipText:{color:'#d6ddca',fontSize:14},disabled:{opacity:.4}});
+function ProfileOptions({kind,choices,selected,onSelect}:{kind:'identity'|'level';choices:Choice[];selected?:string;onSelect:(value:string)=>void}){return <>{choices.map((choice,index)=>{const isSelected=selected===choice.title;return <TouchableOpacity key={choice.title} accessibilityRole="radio" accessibilityState={{selected:isSelected}} style={[styles.choice,kind==='identity'?styles.identityChoice:styles.levelChoice,isSelected&&styles.choiceSelected]} onPress={()=>onSelect(choice.title)}>
+ {kind==='level'?<LevelMeter level={choice.level||1}/>:<View style={styles.iconFrame}>{index<2?<Text style={styles.gender}>{index===0?'♂':'♀'}</Text>:index===2?<Svg width={20} height={20} viewBox="0 0 24 24"><Circle cx="9.5" cy="14" r="4.5" stroke={lime} strokeWidth="1.8" fill="none"/><Path d="M12.7 10.8 19 4.5m-5.2 0H19v5.2M9.5 18.5V23m-3-3h6" stroke={lime} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" fill="none"/></Svg>:null}</View>}
+ <View style={styles.choiceCopy}><Text style={styles.choiceTitle}>{choice.title}</Text>{choice.sub?<Text style={styles.choiceSub}>{choice.sub}</Text>:null}</View>
+ {kind==='level'?<ChevronRight size={21} color="rgba(255,255,255,.8)"/>:<View style={[styles.radio,isSelected&&styles.radioOn]}>{isSelected?<View style={styles.radioDot}/>:null}</View>}
+ </TouchableOpacity>})}</>}
+function LevelMeter({level}:{level:number}){const circumference=2*Math.PI*9;return <View style={styles.meter}><Svg width={27} height={27} viewBox="0 0 24 24"><Circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,.16)" strokeWidth="2.8" fill="none"/><Circle cx="12" cy="12" r="9" stroke={lime} strokeWidth="2.8" fill="none" strokeDasharray={`${circumference*level/4} ${circumference}`} strokeLinecap="round" transform="rotate(-90 12 12)"/></Svg></View>}
+const styles=StyleSheet.create({root:{flex:1,backgroundColor:'#070B0A'},safe:{flex:1},webSafe:{paddingTop:57,paddingBottom:20},fullscreenImage:{position:'absolute',top:0,bottom:0,left:0,right:0,width:'100%',height:'100%'},header:{height:24,marginTop:0,marginHorizontal:23,flexDirection:'row',justifyContent:'center',alignItems:'center'},progressTrack:{height:3,marginHorizontal:22,marginTop:14,borderRadius:8,backgroundColor:'rgba(255,255,255,.17)',overflow:'hidden'},progressFill:{height:3,backgroundColor:lime},content:{flex:1,justifyContent:'center'},choiceContent:{justifyContent:'flex-start',paddingTop:28,marginBottom:16},profileContent:{flex:1,position:'relative',marginHorizontal:20},profileTitle:{position:'absolute',top:47,left:5,right:5,fontSize:26,lineHeight:29,fontWeight:'600',letterSpacing:-1.1,color:'#F5F7FA'},profileSub:{position:'absolute',top:109,left:8,right:8,fontSize:15,lineHeight:21,color:'rgba(245,247,250,.72)'},profileOptions:{position:'absolute',top:148,left:0,right:0,flexDirection:'column',gap:9},levelOptions:{top:128},welcomeContent:{justifyContent:'flex-end',paddingBottom:57},storyContent:{justifyContent:'flex-end',paddingBottom:32},photoCopy:{paddingHorizontal:24},photoTitle:{fontSize:34,fontWeight:'700',lineHeight:35,letterSpacing:-1.6,color:'#F5F7FA',marginBottom:10},photoBody:{fontSize:16,lineHeight:23,color:'rgba(245,247,250,.9)',maxWidth:320},panel:{flex:1,marginHorizontal:20,padding:17,borderRadius:28,borderWidth:1,borderColor:'rgba(234,243,255,.18)',backgroundColor:'rgba(20,34,42,.44)'},choicePanel:{marginHorizontal:14,padding:16},title:{fontSize:27,lineHeight:30,fontWeight:'600',letterSpacing:-1.1,color:'#F5F7FA',marginHorizontal:3},body:{fontSize:15,lineHeight:21,color:'rgba(245,247,250,.72)',marginHorizontal:3,marginTop:6,marginBottom:14},choice:{minHeight:69,marginTop:9,paddingHorizontal:10,paddingVertical:9,borderRadius:18,borderWidth:1,borderColor:'rgba(255,255,255,.14)',backgroundColor:'rgba(4,10,16,.35)',flexDirection:'row',alignItems:'center',gap:10},choiceSelected:{borderColor:'rgba(196,245,42,.9)',backgroundColor:'rgba(94,123,23,.22)'},iconFrame:{width:36,height:36,borderRadius:13,borderWidth:1,borderColor:'rgba(255,255,255,.13)',backgroundColor:'rgba(206,231,255,.08)',alignItems:'center',justifyContent:'center'},choiceCopy:{flex:1},choiceTitle:{color:'#F5F7FA',fontSize:15,fontWeight:'600',letterSpacing:-.2},choiceSub:{color:'rgba(245,247,250,.58)',fontSize:11,lineHeight:14,marginTop:3},radio:{width:19,height:19,borderRadius:10,borderWidth:1,borderColor:'rgba(255,255,255,.44)',alignItems:'center',justifyContent:'center'},radioOn:{backgroundColor:lime,borderColor:lime},radioDot:{width:6,height:6,borderRadius:3,backgroundColor:'#11180A'},panelSpacer:{flex:1,minHeight:12},panelFoot:{marginTop:12,color:'rgba(245,247,250,.55)',fontSize:12,lineHeight:17,textAlign:'center'},identityChoice:{height:62,minHeight:62,marginTop:0,paddingHorizontal:11,gap:11},gender:{fontSize:23,color:lime},levelChoice:{height:75,minHeight:75,marginTop:0,paddingHorizontal:10,gap:9},meter:{width:36,height:36,alignItems:'center',justifyContent:'center'},quiz:{position:'absolute',top:41,left:22,right:22,bottom:0,alignItems:'center'},quizTitle:{position:'absolute',top:0,left:0,right:0,textAlign:'center',fontSize:32,lineHeight:35,fontWeight:'700',letterSpacing:-1.2,color:lime},quizQuestion:{position:'absolute',top:46,left:0,right:0,fontSize:21,lineHeight:26,fontWeight:'600',letterSpacing:-.7,color:'#F5F7FA',textAlign:'center'},quizList:{position:'absolute',top:161,left:0,right:0,width:'auto',marginTop:0,gap:11},quizOption:{height:58,borderRadius:17,borderWidth:1,borderColor:'rgba(255,255,255,.24)',backgroundColor:'rgba(5,10,15,.33)',alignItems:'center',justifyContent:'center'},quizText:{fontSize:20,fontWeight:'600',color:'#F5F7FA'},correct:{borderColor:lime,backgroundColor:'rgba(196,245,42,.13)'},wrong:{borderColor:'#FF6B61',backgroundColor:'rgba(255,61,61,.1)'},selected:{borderColor:lime},correctText:{color:lime},quizFeedback:{position:'absolute',top:412,left:4,right:4,textAlign:'center',fontSize:14,lineHeight:20,color:'rgba(245,247,250,.72)'},centerCopy:{position:'absolute',top:187,left:0,right:0,paddingHorizontal:28,alignItems:'center'},centerTitle:{fontSize:31,lineHeight:35,fontWeight:'600',letterSpacing:-1.4,color:'#F5F7FA',textAlign:'center',marginBottom:18},centerBody:{fontSize:16,lineHeight:23,color:'rgba(245,247,250,.72)',textAlign:'center'},footer:{flexDirection:'row',gap:10,marginHorizontal:20,marginBottom:0,height:52,alignItems:'center'},choiceFooter:{marginHorizontal:14},primary:{height:52,borderRadius:28,backgroundColor:lime,alignItems:'center',justifyContent:'center',paddingHorizontal:20},welcomePrimary:{flex:1,height:54},primaryText:{color:'#101708',fontSize:16,fontWeight:'600'},footerPrimary:{flex:1},disabled:{opacity:.6},disabledPrimary:{backgroundColor:'rgba(81,99,44,.34)',borderWidth:1,borderColor:'rgba(196,245,42,.23)'},disabledPrimaryText:{color:'rgba(241,246,250,.72)'},back:{height:52,width:'37%',minWidth:88,borderRadius:28,borderWidth:1,borderColor:'rgba(232,242,251,.34)',backgroundColor:'rgba(213,231,244,.12)',flexDirection:'row',gap:4,alignItems:'center',justifyContent:'center'},backText:{fontSize:16,fontWeight:'600',color:'#F5F7FA'},skip:{position:'absolute',top:Platform.OS==='web'?-9:-11,right:16,minWidth:44,height:44,zIndex:8,alignItems:'center',justifyContent:'center',paddingHorizontal:8},skipText:{fontSize:14,color:'rgba(245,247,250,.75)'}});

@@ -15,12 +15,14 @@ interface InputFieldProps extends TextInputProps {
     label: string;
     error?: string;
     secure?: boolean;
+    hideLabel?: boolean;
 }
 
 export default function InputField({
     label,
     error,
     secure = false,
+    hideLabel = false,
     ...rest
 }: InputFieldProps) {
     const [showPassword, setShowPassword] = useState(false);
@@ -28,7 +30,7 @@ export default function InputField({
 
     return (
         <View style={styles.wrapper}>
-            <Text style={styles.label}>{label}</Text>
+            {!hideLabel && <Text style={styles.label}>{label}</Text>}
             <View style={[styles.inputRow, error ? styles.inputError : styles.inputNormal]}>
                 <TextInput
                     style={styles.input}
@@ -59,7 +61,7 @@ export default function InputField({
 
 const styles = StyleSheet.create({
     wrapper: {
-        marginBottom: 16,
+        marginBottom: 10,
     },
     label: {
         fontSize: FontSize.sm,
@@ -71,14 +73,14 @@ const styles = StyleSheet.create({
     inputRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        borderRadius: 12,
+        borderRadius: 26,
         borderWidth: 1.5,
-        backgroundColor: Colors.inputBg,
-        paddingHorizontal: 14,
-        minHeight: 50,
+        backgroundColor: 'rgba(5,12,19,.48)',
+        paddingHorizontal: 15,
+        minHeight: 52,
     },
     inputNormal: {
-        borderColor: Colors.inputBorder,
+        borderColor: 'rgba(255,255,255,.3)',
     },
     inputError: {
         borderColor: Colors.error,
@@ -86,9 +88,9 @@ const styles = StyleSheet.create({
     input: {
         flex: 1,
         fontSize: FontSize.base,
-        color: Colors.espresso,
         fontFamily: FontFamily.sansRegular,
         paddingVertical: 12,
+        color: '#F5F7FA',
     },
     eyeToggle: {
         paddingLeft: 8,

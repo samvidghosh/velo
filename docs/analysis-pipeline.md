@@ -40,17 +40,12 @@ The running-engine suite passes (11 tests). The repository-wide legacy suite cur
 
 ## macOS validation checklist
 
-1. Implement the native AVFoundation decoder and Vision pose request for the configured iOS deployment target.
-2. Sample at a bounded frame rate and image size; preserve presentation timestamps.
-3. Export normalized landmarks and Vision confidence in pose schema 1.0.
-4. Verify front/side view behavior, orientation, partial occlusion, low light, motion blur, and out-of-frame landmarks on recorded clips.
-5. Connect native extraction to result serialization and show unavailable measurements and limitations.
-6. Build the generated Expo iOS project on macOS, then validate on simulator and a physical iPhone. Source files created on Windows would not prove native compilation.
+The local Expo module in `modules/velo-vision/` now uses AVFoundation and Vision to sample at 8 Hz, cap the frame long edge at 720 pixels, preserve presentation timestamps, and return normalized landmarks with confidence in schema 1.0. The analysis flow and results screen are connected. Device checks still need a completed Xcode build and recorded clips covering front/side views, orientation, occlusion, low light, motion blur, and out-of-frame landmarks.
 
 ## Remaining blockers
 
 - Authentication service, OAuth configuration, password recovery, and final privacy/terms URLs.
-- Native Vision/AVFoundation extraction and a native-to-Python or equivalent on-device calculation boundary.
+- Physical-device validation of native Vision output and projected measurements.
 - Cell-level Excel parsing and C3D parsing are not included in the current installed environment.
 - Expert-labelled running-form video dataset and modality-matched validation data.
 - Results view integration and iOS native/device verification.

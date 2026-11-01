@@ -1,367 +1,50 @@
-import React, { useState } from 'react';
-import {
-    View,
-    Text,
-    StyleSheet,
-    TouchableOpacity,
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    SafeAreaView,
-    Alert,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { ArrowLeft, Check } from 'lucide-react-native';
-import { Colors } from '../constants/colors';
-import { FontFamily, FontSize } from '../constants/typography';
-import Button from '../components/Button';
+import React,{useState} from 'react';
+import {Alert,ImageBackground,KeyboardAvoidingView,Platform,ScrollView,StatusBar,StyleSheet,Text,TouchableOpacity,View,useWindowDimensions} from 'react-native';
+import {BlurView} from 'expo-blur';
+import {useRouter} from 'expo-router';
+import {SafeAreaView,useSafeAreaInsets} from 'react-native-safe-area-context';
+import Svg, {Path} from 'react-native-svg';
 import InputField from '../components/InputField';
-import SocialAuthButton from '../components/SocialAuthButton';
-import BotanicalDecor from '../components/BotanicalDecor';
-import { mockSignUp } from '../auth/mockAuth';
+import Button from '../components/Button';
+import VeloWordmark from '../components/VeloWordmark';
+import {mockSignUp} from '../auth/mockAuth';
+import PhotoScrim from '../components/PhotoScrim';
 
-function isValidEmail(email: string) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+const validEmail=(s:string)=>/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s.trim());
+export default function SignUpScreen(){
+  const router=useRouter();const {height}=useWindowDimensions();const insets=useSafeAreaInsets();const [name,setName]=useState('');const [email,setEmail]=useState('');const [password,setPassword]=useState('');const [confirm,setConfirm]=useState('');const [step,setStep]=useState<1|2>(1);const [emailError,setEmailError]=useState('');const [passwordError,setPasswordError]=useState('');const [serverError,setServerError]=useState('');const [loading,setLoading]=useState(false);
+  const next=()=>{setEmailError('');if(!__DEV__&&!validEmail(email)){setEmailError(email.trim()?'Please enter a valid email address.':'Email is required.');return}setStep(2)};
+  const create=async()=>{setPasswordError('');setServerError('');if(!__DEV__){if(!name.trim()){setPasswordError('First name is required.');return}if(password.length<6){setPasswordError('Use at least 6 characters for your password.');return}if(password!==confirm){setPasswordError('Passwords do not match.');return}}setLoading(true);const result=await mockSignUp(name.trim(),email.trim(),password);setLoading(false);if(result.error)setServerError(result.error);else router.replace('/onboarding' as never)};
+  const socialSignUp=(provider:'Apple'|'Google')=>{if(__DEV__){router.replace('/onboarding' as never);return}Alert.alert('Sign up unavailable',`${provider} sign in is not configured for this app yet.`)};
+  return <ImageBackground source={require('../assets/running/velo-runner-night.jpg')} resizeMode="cover" style={styles.background}>
+    <StatusBar barStyle="light-content"/><PhotoScrim variant="login"/><SafeAreaView style={styles.safe} edges={['top','bottom']}>
+      <View style={[styles.brand,{top:Platform.OS==='web'?58:0}]}><VeloWordmark/></View>
+      <KeyboardAvoidingView style={[styles.formArea,{top:height*.49-insets.top,transform:[{translateY:-height*.21}],maxHeight:height-180}]} behavior={Platform.OS==='ios'?'padding':'height'}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          <BlurView intensity={45} tint="dark" style={styles.card}>
+            <Text style={styles.title}>{step===1?'Sign up':'Finish signing up'}</Text>
+            <Text style={styles.subtitle}>{step===1?'Create your Velo account with an email address.':'Add your details to secure your account.'}</Text>
+            {step===1?<>
+              <View style={styles.sectionLabel}><View style={styles.line}/><Text style={styles.dividerText}>With an email address</Text><View style={styles.line}/></View>
+              <InputField hideLabel label="Email address" placeholder="Email address" value={email} onChangeText={t=>{setEmail(t);setEmailError('');setServerError('')}} keyboardType="email-address" textContentType="emailAddress" autoComplete="email" autoCapitalize="none" error={emailError}/>
+              <Button label="Continue" onPress={next} disabled={!validEmail(email)} textStyle={!validEmail(email)&&styles.disabledLabel} style={[styles.mainButton,!validEmail(email)&&styles.mainDisabled]}/>
+              <Text style={styles.terms}>By continuing, you agree to Velo’s <Text style={styles.termsLink} onPress={()=>Alert.alert('Privacy unavailable','The Privacy Policy URL has not been configured yet.')}>Privacy Policy</Text> and <Text style={styles.termsLink} onPress={()=>Alert.alert('Terms unavailable','The Terms URL has not been configured yet.')}>Terms and Conditions</Text>.</Text>
+              <View style={styles.sectionLabel}><View style={styles.line}/><Text style={styles.dividerText}>or</Text><View style={styles.line}/></View>
+              <SocialButton provider="apple" label="Continue with Apple" onPress={()=>socialSignUp('Apple')}/>
+              <SocialButton provider="google" label="Continue with Google" onPress={()=>socialSignUp('Google')}/>
+            </>:<>
+              <InputField hideLabel label="First name" placeholder="First name" value={name} onChangeText={setName} autoCapitalize="words" textContentType="givenName"/>
+              <InputField hideLabel label="Create password" placeholder="Create password" value={password} onChangeText={setPassword} secure textContentType="newPassword" autoComplete="new-password"/>
+              <InputField hideLabel label="Repeat password" placeholder="Repeat password" value={confirm} onChangeText={setConfirm} secure textContentType="newPassword" autoComplete="new-password" error={passwordError}/>
+              {serverError?<Text style={styles.error}>{serverError}</Text>:null}
+              <Button label="Create account" onPress={create} loading={loading} disabled={loading} style={styles.finishButton}/>
+            </>}
+          </BlurView>
+        </ScrollView>
+      </KeyboardAvoidingView>
+      <View style={styles.footer}><Text style={styles.footerText}>Already have an account? </Text><Text onPress={()=>router.replace('/login')} style={styles.footerLink}>Log in</Text></View>
+    </SafeAreaView>
+  </ImageBackground>
 }
-
-export default function SignUpScreen() {
-    const router = useRouter();
-
-    const [name, setName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [step, setStep] = useState<1 | 2>(1);
-    const [agreed, setAgreed] = useState(false);
-
-    const [nameError, setNameError] = useState('');
-    const [emailError, setEmailError] = useState('');
-    const [passwordError, setPasswordError] = useState('');
-    const [agreeError, setAgreeError] = useState('');
-    const [serverError, setServerError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const clearErrors = () => {
-        setNameError('');
-        setEmailError('');
-        setPasswordError('');
-        setAgreeError('');
-        setServerError('');
-    };
-
-    const validate = () => {
-        clearErrors();
-        let valid = true;
-
-        if (step === 2 && !name.trim()) { setNameError('Name is required.'); valid = false; }
-        if (step === 1 && !email.trim()) {
-            setEmailError('Email is required.'); valid = false;
-        } else if (step === 1 && !isValidEmail(email)) {
-            setEmailError('Please enter a valid email address.'); valid = false;
-        }
-        if (step === 2 && !password) {
-            setPasswordError('Password is required.'); valid = false;
-        } else if (step === 2 && password.length < 6) {
-            setPasswordError('Password must be at least 6 characters.'); valid = false;
-        }
-        if (step === 1 && !agreed) { setAgreeError('Please agree to the Terms and Conditions.'); valid = false; }
-        if (step === 2 && password !== confirmPassword) { setPasswordError('Passwords do not match.'); valid = false; }
-
-        return valid;
-    };
-
-    const handleCreateAccount = async () => {
-        if (!validate()) return;
-        if (step === 1) { setStep(2); return; }
-        setLoading(true);
-        const result = await mockSignUp(name.trim(), email.trim(), password);
-        setLoading(false);
-        if (result.error) {
-            setServerError(result.error);
-        } else {
-            router.replace('/onboarding' as never);
-        }
-    };
-
-    return (
-        <SafeAreaView style={styles.safe}>
-            {/* Botanical header */}
-            <View style={styles.topLeft} pointerEvents="none">
-                <BotanicalDecor corner="topLeft" size={90} opacity={0.4} />
-            </View>
-            <View style={styles.topRight} pointerEvents="none">
-                <BotanicalDecor corner="topRight" size={90} opacity={0.4} />
-            </View>
-
-            {/* Header row */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => step === 2 ? setStep(1) : router.back()} style={styles.backBtn} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
-                    <ArrowLeft size={22} color={Colors.espresso} />
-                </TouchableOpacity>
-                <Text style={styles.wordmark}>velo</Text>
-                <View style={{ width: 38 }} />
-            </View>
-
-            <KeyboardAvoidingView
-                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                style={styles.flex}
-            >
-                <ScrollView
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                >
-                    {/* Form panel */}
-                    <View style={styles.panel}>
-                        <Text style={styles.heading}>{step === 1 ? 'Sign up' : 'Finish signing up'}</Text>
-                        <Text style={styles.subtitle}>{step === 1 ? 'Create your Velo account with your email.' : `Complete your account for ${email}.`}</Text>
-
-                        <View style={styles.form}>
-                            {step === 2 ? <InputField
-                                label="First name"
-                                placeholder="Enter your first name"
-                                value={name}
-                                onChangeText={t => { setName(t); setNameError(''); }}
-                                autoCapitalize="words"
-                                error={nameError}
-                            /> : null}
-                            {step === 1 ? <InputField
-                                label="Email"
-                                placeholder="Enter your email"
-                                value={email}
-                                onChangeText={t => { setEmail(t); setEmailError(''); setServerError(''); }}
-                                keyboardType="email-address"
-                                textContentType="emailAddress"
-                                autoComplete="email"
-                                autoCapitalize="none"
-                                error={emailError}
-                            /> : null}
-                            {step === 2 ? <InputField
-                                label="Password"
-                                placeholder="Create a password"
-                                value={password}
-                                onChangeText={t => { setPassword(t); setPasswordError(''); }}
-                                secure
-                                textContentType="newPassword"
-                                autoComplete="new-password"
-                                error={passwordError}
-                            /> : null}
-                            {step === 2 ? <InputField
-                                label="Repeat password"
-                                placeholder="Repeat your password"
-                                value={confirmPassword}
-                                onChangeText={setConfirmPassword}
-                                secure
-                                textContentType="newPassword"
-                                autoComplete="new-password"
-                            /> : null}
-                            {/* Terms checkbox */}
-                            {step === 1 ? <TouchableOpacity
-                                onPress={() => { setAgreed(v => !v); setAgreeError(''); }}
-                                activeOpacity={0.7}
-                                style={styles.checkboxRow}
-                            >
-                                <View style={[styles.checkbox, agreed && styles.checkboxChecked]}>
-                                    {agreed && <Check size={12} color={Colors.white} strokeWidth={3} />}
-                                </View>
-                                <Text style={styles.checkboxLabel}>
-                                    I agree to the{' '}
-                                    <Text onPress={() => Alert.alert('Terms unavailable', 'The Terms URL has not been configured yet.')} style={styles.termsLink}>Terms</Text>{' '}and{' '}
-                                    <Text onPress={() => Alert.alert('Privacy unavailable', 'The Privacy Policy URL has not been configured yet.')} style={styles.termsLink}>Privacy Policy</Text>.
-                                </Text>
-                            </TouchableOpacity> : null}
-                            {agreeError ? <Text style={styles.agreeError}>{agreeError}</Text> : null}
-
-                            {/* Server error */}
-                            {serverError ? <Text style={styles.serverError}>{serverError}</Text> : null}
-
-                            <Button
-                                label={step === 1 ? 'Continue' : 'Create account'}
-                                onPress={handleCreateAccount}
-                                loading={loading}
-                                disabled={loading || (step === 1 && (!isValidEmail(email) || !agreed))}
-                                style={styles.mainBtn}
-                            />
-
-                            {/* Social auth */}
-                            {step === 1 ? <View style={styles.dividerRow}>
-                                <View style={styles.dividerLine} />
-                                <Text style={styles.dividerText}>Or sign up with</Text>
-                                <View style={styles.dividerLine} />
-                            </View> : null}
-
-                            {step === 1 ? <View style={styles.socialRow}>
-                                <SocialAuthButton provider="google" onPress={() => Alert.alert('Sign up unavailable', 'Google sign in is not configured for this app yet.')} />
-                                <SocialAuthButton provider="apple" onPress={() => Alert.alert('Sign up unavailable', 'Apple sign in is not configured for this app yet.')} />
-                            </View> : null}
-
-                            {/* Sign in link */}
-                            <View style={styles.footerRow}>
-                                <Text style={styles.footerText}>Already have an account? </Text>
-                                <TouchableOpacity onPress={() => router.replace('/login')}>
-                                    <Text style={styles.footerLink}>Sign In</Text>
-                                </TouchableOpacity>
-                            </View>
-                        </View>
-                    </View>
-                </ScrollView>
-            </KeyboardAvoidingView>
-        </SafeAreaView>
-    );
-}
-
-const styles = StyleSheet.create({
-    safe: { flex: 1, backgroundColor: Colors.cream },
-    flex: { flex: 1 },
-
-    topLeft: { position: 'absolute', top: 0, left: 0, zIndex: 0 },
-    topRight: { position: 'absolute', top: 0, right: 0, zIndex: 0 },
-
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: 8,
-        zIndex: 1,
-    },
-    backBtn: {
-        width: 38,
-        height: 38,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    wordmark: {
-        fontFamily: FontFamily.serifBold,
-        fontSize: FontSize.xl,
-        color: Colors.espresso,
-        letterSpacing: 5,
-    },
-
-    scrollContent: {
-        flexGrow: 1,
-        paddingHorizontal: 16,
-        paddingBottom: 32,
-    },
-
-    panel: {
-        backgroundColor: Colors.white,
-        borderRadius: 28,
-        paddingHorizontal: 24,
-        paddingTop: 32,
-        paddingBottom: 28,
-        marginTop: 12,
-        shadowColor: Colors.espresso,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.08,
-        shadowRadius: 20,
-        elevation: 6,
-    },
-    heading: {
-        fontFamily: FontFamily.serifBold,
-        fontSize: FontSize.xxl,
-        color: Colors.espresso,
-        marginBottom: 6,
-    },
-    subtitle: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.sm,
-        color: Colors.muted,
-        marginBottom: 28,
-        lineHeight: FontSize.sm * 1.5,
-    },
-
-    form: {},
-
-    checkboxRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 6,
-        marginTop: 4,
-    },
-    checkbox: {
-        width: 20,
-        height: 20,
-        borderRadius: 5,
-        borderWidth: 1.5,
-        borderColor: Colors.inputBorder,
-        backgroundColor: Colors.inputBg,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 10,
-    },
-    checkboxChecked: {
-        backgroundColor: Colors.caramel,
-        borderColor: Colors.caramel,
-    },
-    checkboxLabel: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.sm,
-        color: Colors.muted,
-        flex: 1,
-        lineHeight: FontSize.sm * 1.5,
-    },
-    termsLink: {
-        color: Colors.caramel,
-        fontFamily: FontFamily.sansMedium,
-    },
-
-    agreeError: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.xs,
-        color: Colors.error,
-        marginBottom: 14,
-        marginLeft: 2,
-    },
-
-    serverError: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.sm,
-        color: Colors.error,
-        textAlign: 'center',
-        marginBottom: 12,
-    },
-
-    mainBtn: { width: '100%', marginTop: 16, marginBottom: 24 },
-
-    dividerRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    dividerLine: {
-        flex: 1,
-        height: 1,
-        backgroundColor: Colors.beige,
-    },
-    dividerText: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.xs,
-        color: Colors.mutedLight,
-        marginHorizontal: 12,
-    },
-
-    socialRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 16,
-        marginBottom: 28,
-    },
-
-    footerRow: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    footerText: {
-        fontFamily: FontFamily.sansRegular,
-        fontSize: FontSize.sm,
-        color: Colors.muted,
-    },
-    footerLink: {
-        fontFamily: FontFamily.sansSemiBold,
-        fontSize: FontSize.sm,
-        color: Colors.caramel,
-    },
-});
+function SocialButton({provider,label,onPress}:{provider:'apple'|'google';label:string;onPress:()=>void}){return <TouchableOpacity onPress={onPress} style={[styles.social,provider==='google'&&styles.google]} accessibilityRole="button"><View style={styles.socialContent}>{provider==='apple'?<Svg width={18} height={18} viewBox="0 0 24 24"><Path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.2 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98l-.09.06c-.22.14-2.2 1.28-2.18 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.35 2.77M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z" fill="#fff"/></Svg>:<Text style={styles.googleG}>G</Text>}<Text style={[styles.socialText,provider==='google'&&styles.googleText]}>{label}</Text></View></TouchableOpacity>}
+const styles=StyleSheet.create({background:{flex:1,backgroundColor:'#10140A'},safe:{flex:1,paddingHorizontal:14},brand:{position:'absolute',left:0,right:0,alignItems:'center',zIndex:2},formArea:{position:'absolute',left:16,right:16},scroll:{flexGrow:0},card:{overflow:'hidden',borderRadius:30,borderWidth:1,borderColor:'rgba(255,255,255,.42)',paddingHorizontal:20,paddingTop:24,paddingBottom:19,backgroundColor:'rgba(14,18,21,.7)'},title:{color:'#F5F7FA',fontSize:30,lineHeight:33,fontWeight:'600',letterSpacing:-1.2,marginHorizontal:0},subtitle:{color:'rgba(255,255,255,.88)',fontSize:15,lineHeight:22,marginHorizontal:0,marginTop:8,marginBottom:14},sectionLabel:{height:30,flexDirection:'row',alignItems:'center',gap:10},line:{height:1,flex:1,backgroundColor:'rgba(255,255,255,.32)'},dividerText:{color:'rgba(255,255,255,.84)',fontSize:14},mainButton:{width:'100%',height:48,marginTop:-3},mainDisabled:{backgroundColor:'rgba(65,71,39,.52)',borderWidth:1,borderColor:'rgba(196,245,42,.12)',shadowOpacity:0},disabledLabel:{color:'rgba(255,255,255,.5)'},terms:{color:'rgba(255,255,255,.82)',fontSize:12,lineHeight:17,marginTop:10,marginHorizontal:4,textAlign:'center'},termsLink:{color:'rgba(255,255,255,.96)',fontWeight:'600',textDecorationLine:'underline'},social:{height:48,borderRadius:25,borderWidth:1,borderColor:'rgba(255,255,255,.38)',backgroundColor:'rgba(255,255,255,.11)',alignItems:'center',justifyContent:'center',marginTop:10},socialContent:{flexDirection:'row',alignItems:'center',justifyContent:'center',gap:9},socialText:{color:'#F5F7FA',fontSize:16,fontWeight:'600'},google:{backgroundColor:'#f8f8f7',borderColor:'rgba(255,255,255,.8)'},googleText:{color:'#17191b'},googleG:{fontSize:17,fontWeight:'700',color:'#4285F4'},finishButton:{width:'100%',height:50,marginTop:3},error:{color:'#ff9990',fontSize:12,marginBottom:8},footer:{position:'absolute',bottom:Platform.OS==='web'?34:2,left:0,right:0,minHeight:44,flexDirection:'row',alignItems:'center',justifyContent:'center'},footerText:{color:'rgba(255,255,255,.92)',fontSize:14},footerLink:{color:'#fff',fontSize:14,fontWeight:'600'}});
